@@ -68,6 +68,15 @@ html, body {
   background: #323f4b;
   overflow: hidden;
 }
+/* The 360 degree viewer fills the stage; its own controls (zoom buttons) sit inside it. */
+#pano {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+#pano[hidden] { display: none; }
 #photo {
   display: block;
   max-width: 100%;
