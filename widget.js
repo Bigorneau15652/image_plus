@@ -1,11 +1,13 @@
-// Image Plus widget (version 0.2): shows the images of the selected Grist row one at a time,
+// Image Plus widget (version 0.3): shows the images of the selected Grist row one at a time,
 // with the name, the counter, previous and next buttons and the arrow keys. Images come from
-// attachments or from https links (Nextcloud share links are converted). The 360 degree view
-// comes in a later version: for now a 360 image is shown flat, with its marker.
+// attachments or from https links (Nextcloud share links are converted). An attachment marked
+// 360 opens in the Pannellum panoramic viewer (picture reduced if the graphics card is too small);
+// a 360 link is shown flat for now, with a note.
 (function () {
   const { t, applyTranslations } = window.imagePlusI18n;
   const { parseImages, MAX_IMAGES } = window.imagePlusImages;
   const { toImageUrl } = window.imagePlusDrives;
+  const { textureLimit, fitSize } = window.imagePlusPanorama;
 
   const MAX_SAMPLES = 3;
   // A Grist download token is renewed when less than this time is left.
@@ -14,13 +16,16 @@
   const $ = (id) => document.getElementById(id);
   const el = {
     notice: $(`notice`), message: $(`message`), viewer: $(`viewer`), photo: $(`photo`),
-    status: $(`status`), error: $(`error`), note360: $(`note360`), bar: $(`bar`),
+    status: $(`status`), pano: $(`pano`), error: $(`error`), note360: $(`note360`), bar: $(`bar`),
     name: $(`name`), badge: $(`badge`), counter: $(`counter`), prev: $(`prev`), next: $(`next`)
   };
 
   // `rowVersion` changes with every row, `showVersion` with every image shown: a load that
   // finishes after a newer one started is ignored.
-  const state = { images: [], current: 0, rowVersion: 0, showVersion: 0, token: null };
+  const state = {
+    images: [], current: 0, rowVersion: 0, showVersion: 0, token: null,
+    viewer: null, blobUrl: null, gpuLimit: null
+  };
 
   // ---------------------------------------------------------------- Messages
 
@@ -93,6 +98,141 @@
 
   // ---------------------------------------------------------------- Display
 
+  // ---------------------------------------------------------------- Panorama
+
+  // Largest texture side the graphics card accepts, read once through a throw-away canvas.
+  function readGpuLimit() {
+    if (state.gpuLimit === null) {
+      try {
+        const gl = document.createElement(`canvas`).getContext(`webgl`);
+        state.gpuLimit = gl ? gl.getParameter(gl.MAX_TEXTURE_SIZE) : 0;
+      } catch {
+        state.gpuLimit = 0;
+      }
+    }
+    return state.gpuLimit;
+  }
+
+  // Stops the panoramic viewer and frees its picture.
+  function destroyPanorama() {
+    if (state.viewer) {
+      try {
+        state.viewer.destroy();
+      } catch {
+        // The viewer is already gone.
+      }
+      state.viewer = null;
+    }
+    if (state.blobUrl) {
+      URL.revokeObjectURL(state.blobUrl);
+      state.blobUrl = null;
+    }
+    el.pano.textContent = ``;
+    el.pano.hidden = true;
+  }
+
+  // Decodes a picture from a blob and gives it with its pixel size.
+  async function decodePicture(blob) {
+    const url = URL.createObjectURL(blob);
+    try {
+      const picture = new Image();
+      picture.src = url;
+      await picture.decode();
+      return { width: picture.naturalWidth, height: picture.naturalHeight, source: picture };
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  // Downloads an attachment and, if it is larger than the graphics card accepts, reduces it.
+  // Returns { blob, size } where size is the final size when the picture was reduced.
+  async function preparePanorama(address) {
+    const response = await fetch(address, { referrerPolicy: `no-referrer` });
+    if (!response.ok) throw new Error(`download`);
+    const blob = await response.blob();
+    const bitmap = await decodePicture(blob);
+    try {
+      const size = fitSize(bitmap.width, bitmap.height, textureLimit(readGpuLimit()));
+      if (!size || !size.scaled) return { blob, size: null };
+      const canvas = document.createElement(`canvas`);
+      canvas.width = size.width;
+      canvas.height = size.height;
+      canvas.getContext(`2d`).drawImage(bitmap.source, 0, 0, size.width, size.height);
+      const reduced = await new Promise((resolve) => canvas.toBlob(resolve, `image/jpeg`, 0.92));
+      if (!reduced) throw new Error(`reduce`);
+      return { blob: reduced, size };
+    } finally {
+      bitmap.source.removeAttribute(`src`);
+    }
+  }
+
+  // Starts the panoramic viewer on a local picture. Resolves once the picture is shown.
+  function startViewer(blobUrl) {
+    return new Promise((resolve, reject) => {
+      el.pano.hidden = false;
+      const viewer = window.pannellum.viewer(el.pano, {
+        type: `equirectangular`,
+        panorama: blobUrl,
+        autoLoad: true,
+        showFullscreenCtrl: false,
+        showZoomCtrl: true,
+        disableKeyboardCtrl: true,
+        compass: false,
+        hfov: 100,
+        minHfov: 30,
+        maxHfov: 120,
+        strings: { loadingLabel: t(`loading`) }
+      });
+      state.viewer = viewer;
+      viewer.on(`load`, () => resolve());
+      viewer.on(`error`, () => reject(new Error(`viewer`)));
+    });
+  }
+
+  // Opens an attachment in the panoramic viewer. Returns the notes to show, or throws a key of
+  // the message to show when the flat image is used instead.
+  async function showPanorama(address, version) {
+    let prepared;
+    try {
+      prepared = await preparePanorama(address);
+    } catch {
+      throw new Error(`panoramaDownloadFailed`);
+    }
+    if (version !== state.showVersion) return null;
+    state.blobUrl = URL.createObjectURL(prepared.blob);
+    try {
+      await startViewer(state.blobUrl);
+    } catch {
+      throw new Error(`panoramaFailed`);
+    }
+    return prepared.size ? [t(`noteScaled`, prepared.size)] : [];
+  }
+
+  // ---------------------------------------------------------------- Display
+
+  // Shows the notes under the picture (one sentence each).
+  function setNotes(notes) {
+    el.note360.textContent = notes.join(` `);
+    el.note360.hidden = !notes.length;
+  }
+
+  // Shows the picture as a flat image.
+  function showFlat(image, address, version) {
+    el.photo.onload = () => {
+      if (version !== state.showVersion) return;
+      el.status.textContent = ``;
+      el.photo.hidden = false;
+      preloadNext();
+    };
+    el.photo.onerror = () => {
+      if (version !== state.showVersion) return;
+      el.status.textContent = ``;
+      setError(t(`loadError`), image.kind === `link` ? image.href : null);
+    };
+    el.photo.alt = image.label;
+    el.photo.src = address;
+  }
+
   // Shows the image at the given position: name, counter, then the picture itself.
   async function showImage(index) {
     const count = state.images.length;
@@ -100,11 +240,11 @@
     const image = state.images[state.current];
     const version = ++state.showVersion;
 
+    destroyPanorama();
     el.name.textContent = image.label;
     el.badge.textContent = t(`badge360`);
     el.badge.hidden = !image.is360;
-    el.note360.textContent = t(`note360`);
-    el.note360.hidden = !image.is360;
+    setNotes(image.is360 && image.kind === `link` ? [t(`noteLink360`)] : []);
     el.counter.textContent = t(`counter`, { current: state.current + 1, total: count });
     el.bar.classList.toggle(`single`, count < 2);
     el.photo.hidden = true;
@@ -124,19 +264,20 @@
     }
     if (version !== state.showVersion) return;
 
-    el.photo.onload = () => {
-      if (version !== state.showVersion) return;
-      el.status.textContent = ``;
-      el.photo.hidden = false;
-      preloadNext();
-    };
-    el.photo.onerror = () => {
-      if (version !== state.showVersion) return;
-      el.status.textContent = ``;
-      setError(t(`loadError`), image.kind === `link` ? image.href : null);
-    };
-    el.photo.alt = image.label;
-    el.photo.src = address;
+    if (image.is360 && image.kind === `attachment`) {
+      try {
+        const notes = await showPanorama(address, version);
+        if (notes === null || version !== state.showVersion) return;
+        el.status.textContent = ``;
+        setNotes(notes);
+        return;
+      } catch (error) {
+        if (version !== state.showVersion) return;
+        destroyPanorama();
+        setNotes([t(error.message === `panoramaDownloadFailed` ? `panoramaDownloadFailed` : `panoramaFailed`)]);
+      }
+    }
+    showFlat(image, address, version);
   }
 
   // Loads the next picture in advance when it is a link, so that the next click is instant.
@@ -155,6 +296,7 @@
   function showEmpty(text) {
     state.images = [];
     state.showVersion += 1;
+    destroyPanorama();
     el.viewer.hidden = true;
     el.photo.removeAttribute(`src`);
     setNotice(``);
@@ -173,6 +315,7 @@
     state.images = images;
     if (!images.length) {
       state.showVersion += 1;
+      destroyPanorama();
       el.viewer.hidden = true;
       setMessage(rejected.length ? `` : t(`noImages`));
       return;

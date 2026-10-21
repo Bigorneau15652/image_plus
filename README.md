@@ -6,7 +6,7 @@ English first, version française plus bas.
 
 A custom widget for [Grist](https://www.getgrist.com) that shows the images of the selected row, including 360 degree panoramas. It is being built in small versions.
 
-Status: version 0.2. The widget shows the images of the selected row one at a time, with the name, a counter, previous and next buttons and the arrow keys, and reports the values it ignored. Nextcloud share links are converted automatically. A 360 degree image is shown flat for now: the panoramic view comes in a later version. Attachments need the access level "Full document access"; links work with "Read table".
+Status: version 0.3. The widget shows the images of the selected row one at a time, with the name, a counter, previous and next buttons and the arrow keys, and reports the values it ignored. Nextcloud share links are converted automatically. An attachment marked `[360]` opens in a panoramic view (drag to look around, mouse wheel or the + and - buttons to zoom, left and right arrow keys to change image); a picture larger than the graphics card accepts is reduced automatically and the widget says so. A 360 degree link is still shown flat, with a note: the panoramic view of links comes in a later version. Attachments need the access level "Full document access"; links work with "Read table".
 
 ### Columns
 
@@ -24,24 +24,27 @@ A cell may hold several images. Accepted images: PNG, JPEG, GIF, BMP, WebP, SVG 
 2. The widget address is `https://YOUR-ACCOUNT.github.io/image_plus/index.html`.
 3. In Grist, add a page with a custom widget and paste that address. Links work with the "Read table" access level.
 
-If your Grist server is not `grist.numerique.gouv.fr`, edit two places in `index.html`: the `src` of the `grist-plugin-api.js` script and the host named in the Content-Security-Policy line just above it (for the public service use `https://docs.getgrist.com`).
+If your Grist server is not `grist.numerique.gouv.fr`, edit three places in `index.html`: the `src` of the `grist-plugin-api.js` script and, in the Content-Security-Policy line just above it, the host of `script-src` and the host pattern of `connect-src` (for the public service use `https://docs.getgrist.com` and `https://*.getgrist.com`).
 
 ### Security and privacy
 
 - The only external script is the Grist plugin API, loaded from your own Grist server. Nothing is loaded from a CDN and no data is sent to any third-party service.
-- The page has a Content-Security-Policy that forbids any other source.
+- The 360 degree view uses Pannellum 2.5.6 (MIT licence), copied into `vendor/pannellum/` and loaded from this site only. It is checked for `eval` and inline styles: see `vendor/pannellum/VENDOR.md`.
+- The page has a Content-Security-Policy that forbids any other source. The widget downloads an attachment only to give it to the panoramic view, from your Grist server, and the picture never leaves your browser.
 - Links must be absolute https addresses without embedded credentials; anything else is ignored and reported.
 - User data (names, links) is only ever inserted into the page as text, never as HTML.
 
 ### Development
 
-`npm test` runs the tests of the cell analysis (`images.js`) with Node. The pages reference their scripts with `?v=0.1.0`: change that number in `index.html` with every release so that browsers fetch the new files at once.
+`npm test` runs the tests of the cell analysis (`images.js`), of the links of drives (`drives.js`) and of the size decisions of the 360 degree view (`panorama.js`) with Node. The pages reference their scripts with `?v=0.3.0`: change that number in `index.html` with every release so that browsers fetch the new files at once.
 
 ### Files
 
 - `index.html`, `widget.js`, `widget.css`: the widget.
 - `images.js`: turns the cell values into a list of images (no page access, tested with Node).
 - `drives.js`: turns a link of a drive into the address of the picture (Nextcloud for now, tested with Node).
+- `panorama.js`: decides whether a picture is reduced for the graphics card (no page access, tested with Node).
+- `vendor/pannellum/`: the Pannellum viewer, with its licence.
 - `shared/i18n.js`: French and English texts, picked from the browser language.
 - `tests/`: the tests.
 
@@ -51,7 +54,7 @@ Licence: MIT.
 
 Widget personnalisé pour [Grist](https://www.getgrist.com) qui affiche les images de la ligne sélectionnée, y compris les panoramas à 360°. Il est construit par petites versions.
 
-État : version 0.2. Le widget affiche une à une les images de la ligne sélectionnée, avec le nom, un compteur, les boutons précédent et suivant et les flèches du clavier, et signale les valeurs ignorées. Les liens de partage Nextcloud sont convertis automatiquement. Une image 360° est affichée à plat pour l'instant : la vue panoramique arrive dans une prochaine version. Les pièces jointes demandent le niveau d'accès « Accès complet au document » ; les liens fonctionnent avec « Lire la table ».
+État : version 0.3. Le widget affiche une à une les images de la ligne sélectionnée, avec le nom, un compteur, les boutons précédent et suivant et les flèches du clavier, et signale les valeurs ignorées. Les liens de partage Nextcloud sont convertis automatiquement. Une pièce jointe marquée `[360]` s'ouvre en vue panoramique (glisser pour regarder autour, molette ou boutons + et - pour zoomer, flèches gauche et droite pour changer d'image) ; une image plus grande que ce que la carte graphique accepte est réduite automatiquement et le widget l'indique. Un lien 360° est encore affiché à plat, avec une note : la vue panoramique des liens arrive dans une prochaine version. Les pièces jointes demandent le niveau d'accès « Accès complet au document » ; les liens fonctionnent avec « Lire la table ».
 
 ### Colonnes
 
@@ -69,6 +72,8 @@ Une cellule peut contenir plusieurs images. Images acceptées : PNG, JPEG, GIF, 
 2. L'adresse du widget est `https://VOTRE-COMPTE.github.io/image_plus/index.html`.
 3. Dans Grist, ajoutez une page avec un widget personnalisé et collez cette adresse. Les liens fonctionnent avec le niveau d'accès « Lire la table ».
 
-Si votre serveur Grist n'est pas `grist.numerique.gouv.fr`, modifiez deux endroits dans `index.html` : l'adresse du script `grist-plugin-api.js` et l'hôte indiqué dans la ligne Content-Security-Policy située juste au-dessus (pour le service public, utilisez `https://docs.getgrist.com`).
+Si votre serveur Grist n'est pas `grist.numerique.gouv.fr`, modifiez trois endroits dans `index.html` : l'adresse du script `grist-plugin-api.js` et, dans la ligne Content-Security-Policy située juste au-dessus, l'hôte de `script-src` et le motif d'hôte de `connect-src` (pour le service public, utilisez `https://docs.getgrist.com` et `https://*.getgrist.com`).
+
+Le lecteur panoramique est Pannellum 2.5.6 (licence MIT), copié dans `vendor/pannellum/` : rien n'est chargé depuis un CDN.
 
 Licence : MIT.
