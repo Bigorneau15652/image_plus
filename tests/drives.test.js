@@ -33,23 +33,10 @@ test(`a Google Drive link without a usable identifier is not changed`, () => {
   assert.equal(toImageUrl(`https://drive.google.com/open?id=a%22b`).drive, `direct`);
 });
 
-test(`a OneDrive link becomes an address of the sharing API, with a download address as a second try`, () => {
+test(`a OneDrive link is recognised but not converted`, () => {
   const link = `https://1drv.ms/i/c/90ce7aa89d81eed3/IQAJQJxuQuV6R4yDVf2F1KTiAUO0AaoHThSjK9MysfhJQVs?e=A6BmBe`;
-  const result = toImageUrl(link);
-  assert.equal(result.drive, `onedrive`);
-  assert.match(result.url, /^https:\/\/api\.onedrive\.com\/v1\.0\/shares\/u![A-Za-z0-9_-]+\/root\/content$/);
-  const encoded = result.url.split(`/shares/u!`)[1].split(`/`)[0];
-  assert.equal(Buffer.from(encoded.replace(/-/g, `+`).replace(/_/g, `/`), `base64`).toString(`utf8`), link);
-  assert.deepEqual(result.alternatives, [`${link}&download=1`]);
-});
-
-test(`the address of a OneDrive photo page gives the same share token as the original link`, () => {
-  const link = `https://1drv.ms/i/c/90ce7aa89d81eed3/IQAJQJxuQuV6R4yDVf2F1KTiAUO0AaoHThSjK9MysfhJQVs?e=A6BmBe`;
-  const page = `https://onedrive.live.com/photos?photosData=%2Fshare%2F90CE7AA89D81EED3%21s6e9c%3Fe%3DA6BmBe&redeem=aHR0cHM6Ly8xZHJ2Lm1zL2kvYy85MGNlN2FhODlkODFlZWQzL0lRQUpRSnh1UXVWNlI0eURWZjJGMUtUaUFVTzBBYW9IVGhTaks5TXlzZmhKUVZzP2U9QTZCbUJl`;
-  const fromPage = toImageUrl(page);
-  const fromLink = toImageUrl(link);
-  assert.equal(fromPage.url, fromLink.url);
-  assert.deepEqual(fromPage.alternatives, fromLink.alternatives);
+  assert.deepEqual(toImageUrl(link), { url: link, alternatives: [], drive: `onedrive` });
+  assert.equal(toImageUrl(`https://onedrive.live.com/photos?redeem=abc`).drive, `onedrive`);
 });
 
 test(`a kDrive share link becomes the API address of the file`, () => {

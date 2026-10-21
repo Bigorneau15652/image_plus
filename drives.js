@@ -1,7 +1,7 @@
 // Turns the https link of an image, as written in a Grist cell, into the addresses that a picture
 // element can load. This file has no access to the page: it is pure logic, easy to test with Node.
-// It knows Nextcloud, Google Drive, OneDrive and kDrive share links; any other https link is used
-// as it is. The address formats of the commercial drives are not documented as stable: for each
+// It knows Nextcloud, Google Drive and kDrive share links, and recognises OneDrive links (which
+// cannot be shown); any other https link is used as it is. The address formats of the commercial drives are not documented as stable: for each
 // drive the first address is the most likely one and the others are tried in turn by the widget.
 (function (root) {
   // A Nextcloud public share: .../s/CODE or .../index.php/s/CODE, with or without a final slash.
@@ -32,34 +32,10 @@
     };
   }
 
-  // Base64 without padding, with the characters allowed in an address (as the sharing API expects).
-  function toShareToken(text) {
-    return btoa(text).replace(/=+$/, ``).replace(/\//g, `_`).replace(/\+/g, `-`);
-  }
-
-  // OneDrive: the sharing API takes the share link itself, encoded in base64. The address of the
-  // page of a photo (onedrive.live.com/photos?...&redeem=...) already carries that encoding in its
-  // `redeem` parameter. The second address asks the share link itself for the file.
+  // OneDrive: recent links cannot be shown in another page, so the link is not converted. The
+  // widget reports it with a dedicated message and offers to open it in a new tab.
   function oneDrive(url) {
-    const redeem = url.searchParams.get(`redeem`);
-    let shareLink = url.href;
-    let token = toShareToken(url.href);
-    if (redeem && /^[A-Za-z0-9+/_=-]+$/.test(redeem)) {
-      token = redeem.replace(/=+$/, ``).replace(/\//g, `_`).replace(/\+/g, `-`);
-      try {
-        const decoded = new URL(atob(redeem.replace(/_/g, `/`).replace(/-/g, `+`)));
-        if (decoded.protocol === `https:`) shareLink = decoded.href;
-      } catch {
-        // The redeem value is not a link: the page address is used as it is.
-      }
-    }
-    const download = new URL(shareLink);
-    download.searchParams.set(`download`, `1`);
-    return {
-      url: `https://api.onedrive.com/v1.0/shares/u!${token}/root/content`,
-      alternatives: [download.href],
-      drive: `onedrive`
-    };
+    return { url: url.href, alternatives: [], drive: `onedrive` };
   }
 
   // kDrive: the API address of the shared file. The file number is only in the address of the

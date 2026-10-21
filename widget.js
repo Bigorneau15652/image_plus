@@ -1,4 +1,4 @@
-// Image Plus widget (version 0.4): shows the images of the selected Grist row one at a time,
+// Image Plus widget (version 0.5): shows the images of the selected Grist row one at a time,
 // with the name, the counter, previous and next buttons and the arrow keys. Images come from
 // attachments or from https links (Nextcloud, Google Drive, OneDrive and kDrive share links are
 // converted). An attachment marked 360 opens in the Pannellum panoramic viewer (picture reduced if the graphics card is too small);
@@ -8,6 +8,7 @@
   const { parseImages, MAX_IMAGES } = window.imagePlusImages;
   const { toImageUrl } = window.imagePlusDrives;
   const { textureLimit, fitSize } = window.imagePlusPanorama;
+  const { checkProxyTemplate, buildProxyUrl, activeProxy } = window.imagePlusProxy;
 
   const MAX_SAMPLES = 3;
   // A Grist download token is renewed when less than this time is left.
@@ -24,7 +25,7 @@
   // finishes after a newer one started is ignored.
   const state = {
     images: [], current: 0, rowVersion: 0, showVersion: 0, token: null,
-    viewer: null, blobUrl: null, gpuLimit: null
+    viewer: null, blobUrl: null, gpuLimit: null, options: {}, proxy: null
   };
 
   // ---------------------------------------------------------------- Messages
@@ -147,7 +148,7 @@
   // Downloads an attachment and, if it is larger than the graphics card accepts, reduces it.
   // Returns { blob, size } where size is the final size when the picture was reduced.
   async function preparePanorama(address) {
-    const response = await fetch(address, { referrerPolicy: `no-referrer` });
+    const response = await fetch(address, { referrerPolicy: `no-referrer`, credentials: `omit` });
     if (!response.ok) throw new Error(`download`);
     const blob = await response.blob();
     const bitmap = await decodePicture(blob);
@@ -189,14 +190,14 @@
     });
   }
 
-  // Opens an attachment in the panoramic viewer. Returns the notes to show, or throws a key of
+  // Opens an attachment, or a link through the proxy, in the panoramic viewer. Returns the notes to show, or throws a key of
   // the message to show when the flat image is used instead.
-  async function showPanorama(address, version) {
+  async function showPanorama(address, version, failureKey) {
     let prepared;
     try {
       prepared = await preparePanorama(address);
     } catch {
-      throw new Error(`panoramaDownloadFailed`);
+      throw new Error(failureKey);
     }
     if (version !== state.showVersion) return null;
     state.blobUrl = URL.createObjectURL(prepared.blob);
@@ -258,7 +259,8 @@
     el.name.textContent = image.label;
     el.badge.textContent = t(`badge360`);
     el.badge.hidden = !image.is360;
-    setNotes(image.is360 && image.kind === `link` ? [t(`noteLink360`)] : []);
+    const viaProxy = image.is360 && image.kind === `link` && Boolean(state.proxy);
+    setNotes(image.is360 && image.kind === `link` && !viaProxy ? [t(`noteLink360`)] : []);
     el.counter.textContent = t(`counter`, { current: state.current + 1, total: count });
     el.bar.classList.toggle(`single`, count < 2);
     el.photo.hidden = true;
@@ -266,9 +268,15 @@
     el.status.textContent = t(`loading`);
     setError(``);
 
+    if (image.kind === `link` && toImageUrl(image.href).drive === `onedrive`) {
+      el.status.textContent = ``;
+      setError(t(`onedriveUnsupported`), image.href);
+      return;
+    }
+
     let address;
     try {
-      address = await addressOf(image);
+      address = viaProxy ? buildProxyUrl(state.proxy, toImageUrl(image.href).url) : await addressOf(image);
     } catch {
       if (version === state.showVersion) {
         el.status.textContent = ``;
@@ -278,9 +286,10 @@
     }
     if (version !== state.showVersion) return;
 
-    if (image.is360 && image.kind === `attachment`) {
+    if (image.is360 && (image.kind === `attachment` || viaProxy)) {
+      const failureKey = viaProxy ? `panoramaProxyFailed` : `panoramaDownloadFailed`;
       try {
-        const notes = await showPanorama(address, version);
+        const notes = await showPanorama(address, version, failureKey);
         if (notes === null || version !== state.showVersion) return;
         el.status.textContent = ``;
         setNotes(notes);
@@ -288,7 +297,7 @@
       } catch (error) {
         if (version !== state.showVersion) return;
         destroyPanorama();
-        setNotes([t(error.message === `panoramaDownloadFailed` ? `panoramaDownloadFailed` : `panoramaFailed`)]);
+        setNotes([t(error.message === failureKey ? failureKey : `panoramaFailed`)]);
       }
     }
     showFlat(image, address, version);
@@ -298,6 +307,7 @@
   function preloadNext() {
     const next = state.images[(state.current + 1) % state.images.length];
     if (!next || next.kind !== `link` || state.images.length < 2) return;
+    if (toImageUrl(next.href).drive === `onedrive` || (next.is360 && state.proxy)) return;
     const preload = new Image();
     preload.referrerPolicy = `no-referrer`;
     preload.src = toImageUrl(next.href).url;
@@ -339,19 +349,71 @@
     showImage(0);
   }
 
+  // ----------------------------------------------------------------- Settings
+
+  const form = {
+    panel: $(`settings`), enabled: $(`proxyEnabled`), url: $(`proxyUrl`), error: $(`settingsError`),
+    save: $(`settingsSave`), cancel: $(`settingsCancel`)
+  };
+
+  // Opens the settings form with the stored values.
+  function openSettings() {
+    form.enabled.checked = state.options.proxyEnabled === true;
+    form.url.value = typeof state.options.proxyUrl === `string` ? state.options.proxyUrl : ``;
+    form.error.hidden = true;
+    form.panel.hidden = false;
+    form.enabled.focus();
+  }
+
+  function closeSettings() {
+    form.panel.hidden = true;
+  }
+
+  // Checks the form and stores the options. An invalid address is refused only when the proxy is on.
+  function saveSettings() {
+    const enabled = form.enabled.checked;
+    const checked = checkProxyTemplate(form.url.value);
+    if (enabled && !checked.ok) {
+      const keys = {
+        empty: `proxyErrorEmpty`, https: `proxyErrorHttps`, credentials: `proxyErrorCredentials`,
+        placeholder: `proxyErrorPlaceholder`, host: `proxyErrorHost`
+      };
+      form.error.textContent = t(keys[checked.reason]);
+      form.error.hidden = false;
+      return;
+    }
+    grist.widgetApi.setOptions({ proxyEnabled: enabled, proxyUrl: checked.ok ? checked.template : `` });
+    closeSettings();
+  }
+
+  // Called by Grist with the stored options. A change of the proxy redraws the current 360 link.
+  function onOptions(options) {
+    state.options = options || {};
+    const next = activeProxy(state.options);
+    if (next === state.proxy) return;
+    state.proxy = next;
+    const current = state.images[state.current];
+    if (current && current.is360 && current.kind === `link`) showImage(state.current);
+  }
+
   // -------------------------------------------------------------------- Start
 
   applyTranslations(document);
   setMessage(t(`pickRow`));
+  form.save.addEventListener(`click`, saveSettings);
+  form.cancel.addEventListener(`click`, closeSettings);
   el.prev.addEventListener(`click`, () => step(-1));
   el.next.addEventListener(`click`, () => step(1));
   document.addEventListener(`keydown`, (event) => {
-    if (event.key === `ArrowLeft`) step(-1);
+    if (event.key === `Escape` && !form.panel.hidden) closeSettings();
+    else if (!form.panel.hidden) return;
+    else if (event.key === `ArrowLeft`) step(-1);
     else if (event.key === `ArrowRight`) step(1);
   });
 
   grist.ready({
     requiredAccess: `read table`,
+    onEditOptions: openSettings,
     columns: [
       {
         name: `attachments`,
@@ -374,5 +436,6 @@
       }
     ]
   });
+  grist.onOptions(onOptions);
   grist.onRecord(onRecord);
 })();
