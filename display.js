@@ -5,7 +5,7 @@
   const { t } = window.imagePlusI18n;
   const { textureLimit, fitSize } = window.imagePlusPanorama;
 
-  // `el` holds the elements of the area (photo, status, pano, error, note, bar, name, badge, counter).
+  // `el` holds the elements of the area (viewer, photo, status, pano, error, note, name, badge, counter).
   // `hooks.onFlatLoaded` is called when a flat picture is on screen.
   function createDisplay(el, hooks) {
     // Changes with every image: a load that ends after a newer one started is ignored.
@@ -182,7 +182,7 @@
       el.badge.textContent = t(`badge360`);
       el.badge.hidden = !item.is360;
       el.counter.textContent = t(`counter`, { current: item.position, total: item.count });
-      el.bar.classList.toggle(`single`, item.count < 2);
+      el.viewer.classList.toggle(`single`, item.count < 2);
       setNotes([]);
       setError(``);
       el.status.textContent = t(`loading`);

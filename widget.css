@@ -110,13 +110,13 @@ html, body {
 #error[hidden], #note360[hidden] { display: none; }
 #error a { color: #4a0e0e; font-weight: 600; }
 
-/* Bar under the picture: previous, name with the 360 marker, counter, next. */
+/* Caption under the picture: small, muted text. The float button sits at its end. */
 #bar {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 #caption {
   display: flex;
@@ -125,13 +125,63 @@ html, body {
   align-items: center;
   gap: 6px;
   min-width: 0;
-  color: #1f2933;
+  color: #52606d;
+  font-size: 12px;
   line-height: 1.3;
   white-space: normal;
   overflow-wrap: anywhere;
 }
-#counter { flex-shrink: 0; color: #3e4c59; font-size: 13px; }
-#bar.single #prev, #bar.single #next, #bar.single #counter { display: none; }
+
+/* Previous and next arrows sit on the picture, on both sides. They appear when the pointer is over
+   the picture, and stay visible on screens without a pointer (touch). */
+.arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 56px;
+  margin-top: -28px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  font: inherit;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+#prev { left: 8px; }
+#next { right: 8px; }
+#stage:hover .arrow, .arrow:focus-visible { opacity: 1; }
+.arrow:hover { background: rgba(0, 0, 0, 0.85); }
+.arrow:focus-visible { outline: 3px solid #f2b705; outline-offset: 2px; }
+@media (hover: none) { .arrow, #counter { opacity: 1; } }
+
+/* Counter on the picture, at the bottom. */
+#counter {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  z-index: 20;
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+#stage:hover #counter { opacity: 1; }
+#viewer.single .arrow, #viewer.single #counter { display: none; }
 
 .nav-button {
   flex-shrink: 0;
@@ -156,7 +206,7 @@ html, body {
   border-radius: 10px;
   background: #1c5d8c;
   color: #ffffff;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 .badge-360[hidden] { display: none; }
@@ -221,7 +271,7 @@ html, body {
 .text-button.secondary:hover { background: #3e4c59; border-color: #3e4c59; }
 
 /* Button of the bar that moves the display to the floating window. */
-.float-button { width: 40px; font-size: 20px; }
+.float-button { width: 28px; height: 28px; border-radius: 4px; font-size: 16px; }
 
 /* Message shown in the widget while the floating window has the display. */
 #floating { margin: 16px 8px; text-align: center; }

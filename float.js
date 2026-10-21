@@ -8,7 +8,7 @@
   const $ = (id) => document.getElementById(id);
   const el = {
     message: $(`message`), viewer: $(`viewer`), photo: $(`photo`), status: $(`status`), pano: $(`pano`),
-    error: $(`error`), note: $(`note360`), bar: $(`bar`), name: $(`name`), badge: $(`badge`),
+    error: $(`error`), note: $(`note360`), name: $(`name`), badge: $(`badge`),
     counter: $(`counter`), prev: $(`prev`), next: $(`next`)
   };
   const display = window.imagePlusDisplay.createDisplay(el, null);
@@ -24,7 +24,7 @@
   }
 
   function step(delta) {
-    if (!el.bar.classList.contains(`single`)) sendToWidget({ type: `imageplus:step`, delta });
+    if (!el.viewer.classList.contains(`single`)) sendToWidget({ type: `imageplus:step`, delta });
   }
 
   function showMessage(text) {
