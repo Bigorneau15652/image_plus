@@ -28,6 +28,7 @@
       return gpuLimit;
     }
 
+    // Shows an error under the picture, with a link to open the original address when there is one.
     function setError(text, link) {
       el.error.textContent = text || ``;
       if (text && link) {

@@ -6,7 +6,7 @@ English first, version française plus bas.
 
 A custom widget for [Grist](https://www.getgrist.com) that shows the images of the selected row, including 360 degree panoramas. It is being built in small versions.
 
-Status: version 0.6.1. The widget shows the images of the selected row one at a time, with the name as a small caption under the picture, a counter and previous and next arrows on the picture (shown when the pointer is over it) and the arrow keys, and reports the values it ignored. Share links of Nextcloud, Google Drive and kDrive are converted automatically (the public share must show a picture; the commercial drives do not document these addresses, so they may stop working one day). An attachment marked `[360]` opens in a panoramic view (drag to look around, mouse wheel or the + and - buttons to zoom, left and right arrow keys to change image); a picture larger than the graphics card accepts is reduced automatically and the widget says so. A 360 degree link is shown flat, with a note, unless the optional proxy is turned on (see below). Attachments need the access level "Full document access"; links work with "Read table".
+Status: version 0.7.0. The widget shows the images of the selected row one at a time, with the name as a small caption under the picture, a counter and previous and next arrows on the picture (shown when the pointer is over it) and the arrow keys, and reports the values it ignored. Share links of Nextcloud, Google Drive and kDrive are converted automatically (the public share must show a picture; the commercial drives do not document these addresses, so they may stop working one day). An attachment marked `[360]` opens in a panoramic view (drag to look around, mouse wheel or the + and - buttons to zoom, left and right arrow keys to change image); a picture larger than the graphics card accepts is reduced automatically and the widget says so. A 360 degree link is shown flat, with a note, unless the optional proxy is turned on (see below). Attachments need the access level "Full document access"; links work with "Read table".
 
 ### Columns
 
@@ -26,7 +26,7 @@ The small arrow button at the end of the caption line under the picture opens th
 
 ### Proxy for 360 degree links (optional)
 
-A 360 degree view needs the picture to be readable by the page, and most drives forbid that for a link. The widget can send such links through a proxy that you operate (for example a small Cloudflare Worker that adds the missing header and accepts only your own drive domain). The setting is off by default. In the right-hand panel of Grist, click "Open configuration", tick "Use a proxy for 360 degree links" and type an https address that contains `{url}`, for example `https://my-proxy.example/?url={url}`. The address is stored in the options of the widget, never in the code. Only the links marked `[360]` go through the proxy: attachments and flat images never do. The proxy receives the address of each 360 degree link, so only name a proxy you trust.
+A 360 degree view needs the picture to be readable by the page, and most drives forbid that for a link. The widget can send such links through a proxy that you operate (for example a small Cloudflare Worker that adds the missing header and accepts only your own drive domain). The setting is off by default. In the right-hand panel of Grist, click "Open configuration", tick "Use a proxy for 360 degree links" and type an https address that contains `{url}`, for example `https://my-proxy.example/?url={url}`. The address is stored in the options of the widget, never in the code. Only the links marked `[360]` go through the proxy: attachments and flat images never do. The proxy receives the address of each 360 degree link, so only name a proxy you trust. Put no token or password in the proxy address: the options of a widget can be read by anyone who has access to the document.
 
 ### Install
 
@@ -38,7 +38,7 @@ If your Grist server is not `grist.numerique.gouv.fr`, edit three places in `ind
 
 ### Security and privacy
 
-- The only external script is the Grist plugin API, loaded from your own Grist server. Nothing is loaded from a CDN and no data is sent to any third-party service.
+- The only external script is the Grist plugin API, loaded from your own Grist server. Nothing is loaded from a CDN. By default no data is sent to any third-party service: the only exception is the optional proxy for 360 degree links, which receives the address of each 360 degree link when you turn it on.
 - The 360 degree view uses Pannellum 2.5.6 (MIT licence), copied into `vendor/pannellum/` and loaded from this site only. It is checked for `eval` and inline styles: see `vendor/pannellum/VENDOR.md`.
 - The page has a Content-Security-Policy that forbids any other source of scripts. The widget downloads a picture only to give it to the panoramic view: an attachment from your Grist server, or a 360 degree link through the proxy you typed (if any). For that, `connect-src` accepts https addresses: the code only fetches those two kinds of address.
 - Links must be absolute https addresses without embedded credentials; anything else is ignored and reported.
@@ -46,13 +46,13 @@ If your Grist server is not `grist.numerique.gouv.fr`, edit three places in `ind
 
 ### Development
 
-`npm test` runs the tests of the cell analysis (`images.js`), of the links of drives (`drives.js`) of the proxy setting (`proxy.js`) and of the size decisions of the 360 degree view (`panorama.js`) with Node. The pages reference their scripts with `?v=0.6.1`: change that number in `index.html` with every release so that browsers fetch the new files at once.
+`npm test` runs the tests of the cell analysis (`images.js`), of the links of drives (`drives.js`) of the proxy setting (`proxy.js`) and of the size decisions of the 360 degree view (`panorama.js`) with Node. The pages reference their scripts with `?v=0.7.0`: change that number in `index.html` with every release so that browsers fetch the new files at once.
 
 ### Files
 
 - `index.html`, `widget.js`, `widget.css`: the widget.
 - `images.js`: turns the cell values into a list of images (no page access, tested with Node).
-- `drives.js`: turns a link of a drive into the addresses of the picture (Nextcloud, Google Drive, OneDrive, kDrive, tested with Node).
+- `drives.js`: turns a link of a drive into the addresses of the picture (Nextcloud, Google Drive, kDrive; recognises OneDrive links; tested with Node).
 - `display.js`: draws one image (flat or 360 degree) in a viewer area; shared by the widget and the floating window.
 - `item.js`: describes and checks what is handed over to a display (tested with Node).
 - `float.html`, `float.js`: the floating window.
@@ -68,7 +68,7 @@ Licence: MIT.
 
 Widget personnalisé pour [Grist](https://www.getgrist.com) qui affiche les images de la ligne sélectionnée, y compris les panoramas à 360°. Il est construit par petites versions.
 
-État : version 0.6.1. Le widget affiche une à une les images de la ligne sélectionnée, avec le nom en légende discrète sous l'image, un compteur et des flèches précédent et suivant sur l'image (visibles au survol) et les flèches du clavier, et signale les valeurs ignorées. Les liens de partage Nextcloud, Google Drive et kDrive sont convertis automatiquement (le partage public doit désigner une image ; les drives commerciaux ne documentent pas ces adresses, elles peuvent donc cesser de fonctionner un jour). Une pièce jointe marquée `[360]` s'ouvre en vue panoramique (glisser pour regarder autour, molette ou boutons + et - pour zoomer, flèches gauche et droite pour changer d'image) ; une image plus grande que ce que la carte graphique accepte est réduite automatiquement et le widget l'indique. Un lien 360° est affiché à plat, avec une note, sauf si le proxy facultatif est activé (voir plus bas). Les pièces jointes demandent le niveau d'accès « Accès complet au document » ; les liens fonctionnent avec « Lire la table ».
+État : version 0.7.0. Le widget affiche une à une les images de la ligne sélectionnée, avec le nom en légende discrète sous l'image, un compteur et des flèches précédent et suivant sur l'image (visibles au survol) et les flèches du clavier, et signale les valeurs ignorées. Les liens de partage Nextcloud, Google Drive et kDrive sont convertis automatiquement (le partage public doit désigner une image ; les drives commerciaux ne documentent pas ces adresses, elles peuvent donc cesser de fonctionner un jour). Une pièce jointe marquée `[360]` s'ouvre en vue panoramique (glisser pour regarder autour, molette ou boutons + et - pour zoomer, flèches gauche et droite pour changer d'image) ; une image plus grande que ce que la carte graphique accepte est réduite automatiquement et le widget l'indique. Un lien 360° est affiché à plat, avec une note, sauf si le proxy facultatif est activé (voir plus bas). Les pièces jointes demandent le niveau d'accès « Accès complet au document » ; les liens fonctionnent avec « Lire la table ».
 
 ### Colonnes
 
@@ -88,7 +88,7 @@ Le petit bouton fléché au bout de la ligne de légende sous l'image ouvre les 
 
 ### Proxy pour les liens 360° (facultatif)
 
-Une vue à 360° demande que la page puisse lire l'image, ce que la plupart des drives interdisent pour un lien. Le widget peut faire passer ces liens par un proxy que vous gérez (par exemple un petit Worker Cloudflare qui ajoute l'en-tête manquant et n'accepte que le domaine de votre drive). Le réglage est désactivé par défaut. Dans le panneau de droite de Grist, cliquez sur « Ouvrir la configuration », cochez « Utiliser un proxy pour les liens 360° » et saisissez une adresse https qui contient `{url}`, par exemple `https://mon-proxy.exemple/?url={url}`. L'adresse est enregistrée dans les options du widget, jamais dans le code. Seuls les liens marqués `[360]` passent par le proxy : les pièces jointes et les images plates n'y passent jamais. Le proxy reçoit l'adresse de chaque lien 360°, n'indiquez donc qu'un proxy de confiance.
+Une vue à 360° demande que la page puisse lire l'image, ce que la plupart des drives interdisent pour un lien. Le widget peut faire passer ces liens par un proxy que vous gérez (par exemple un petit Worker Cloudflare qui ajoute l'en-tête manquant et n'accepte que le domaine de votre drive). Le réglage est désactivé par défaut. Dans le panneau de droite de Grist, cliquez sur « Ouvrir la configuration », cochez « Utiliser un proxy pour les liens 360° » et saisissez une adresse https qui contient `{url}`, par exemple `https://mon-proxy.exemple/?url={url}`. L'adresse est enregistrée dans les options du widget, jamais dans le code. Seuls les liens marqués `[360]` passent par le proxy : les pièces jointes et les images plates n'y passent jamais. Le proxy reçoit l'adresse de chaque lien 360°, n'indiquez donc qu'un proxy de confiance. Ne mettez aucun jeton ni mot de passe dans l'adresse du proxy : les options d'un widget peuvent être lues par toute personne qui a accès au document.
 
 ### Installation
 

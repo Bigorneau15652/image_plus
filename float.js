@@ -23,10 +23,12 @@
     }
   }
 
+  // Asks the widget for the previous (-1) or next (1) image, when there are several.
   function step(delta) {
     if (!el.viewer.classList.contains(`single`)) sendToWidget({ type: `imageplus:step`, delta });
   }
 
+  // Empties the window and shows a message instead of an image.
   function showMessage(text) {
     display.clear();
     el.viewer.hidden = true;

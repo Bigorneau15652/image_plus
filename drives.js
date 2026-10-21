@@ -8,8 +8,6 @@
   const NEXTCLOUD_SHARE = /^(.*\/s\/[A-Za-z0-9._-]+)\/?$/;
   // A Google Drive file identifier.
   const GOOGLE_ID = /^[A-Za-z0-9_-]{10,}$/;
-  // A kDrive share: /app/share/DRIVE_NUMBER/SHARE_UUID.
-  const KDRIVE_SHARE = /^\/app\/share\/(\d+)\/([0-9a-fA-F-]{20,})\/?$/;
   // The page that shows one picture of a kDrive share: /app/share/DRIVE/UUID/preview/TYPE/FILE.
   const KDRIVE_PREVIEW = /^\/app\/share\/(\d+)\/([0-9a-fA-F-]{20,})\/preview\/[a-z]+\/(\d+)\/?$/;
   const ONEDRIVE_HOSTS = new Set([`1drv.ms`, `onedrive.live.com`]);
@@ -39,16 +37,12 @@
   }
 
   // kDrive: the API address of the shared file. The file number is only in the address of the
-  // page that shows the picture (.../preview/image/NUMBER); a plain share address does not hold it.
+  // page that shows the picture (.../preview/image/NUMBER); a plain share address does not hold it,
+  // so it is used as it is.
   function kDrive(url) {
     const page = KDRIVE_PREVIEW.exec(url.pathname);
-    if (page) {
-      const base = `https://kdrive.infomaniak.com/2/app/${page[1]}/share/${page[2]}/files/${page[3]}`;
-      return { url: `${base}/download`, alternatives: [`${base}/preview`], drive: `kdrive` };
-    }
-    const share = KDRIVE_SHARE.exec(url.pathname);
-    if (!share) return null;
-    const base = `https://kdrive.infomaniak.com/2/app/${share[1]}/share/${share[2]}`;
+    if (!page) return null;
+    const base = `https://kdrive.infomaniak.com/2/app/${page[1]}/share/${page[2]}/files/${page[3]}`;
     return { url: `${base}/download`, alternatives: [`${base}/preview`], drive: `kdrive` };
   }
 

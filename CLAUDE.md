@@ -20,7 +20,7 @@ image_plus is a Grist custom widget: it shows the images of the selected row, in
 
 ## Tests and versions
 
-- `npm test` runs the Node tests of `images.js`. Add a test for every behaviour of the cell analysis.
+- `npm test` runs the Node tests of the pure modules (`images.js`, `drives.js`, `item.js`, `panorama.js`, `proxy.js`). Add a test for every behaviour of the cell analysis and of the other pure modules.
 - Pages reference their scripts with `?v=X.Y.Z`: change that number in `index.html` with every release.
 - Commit message: `Version 0.2.0 : short description in French`. Work on a branch, push, open a draft pull request.
 - The widget cannot be tried inside Grist from a session: give the maintainer the list of manual tests after each version.
@@ -29,6 +29,7 @@ image_plus is a Grist custom widget: it shows the images of the selected row, in
 
 - Accepted: images that a browser shows (PNG, JPEG, GIF, BMP, WebP, SVG, AVIF) and 360 degree panoramas. No PDF reader and no DXF reader.
 - A 360 degree panorama is marked by `[360]` in its name, in the names column. Without the names column there is no 360 degree image.
-- Planned drives for links: Nextcloud, Google Drive, OneDrive, kDrive. The kDrive, Google Drive and OneDrive test links given by the maintainer are flat images. Only Nextcloud has a 360 degree test link.
-- Optional proxy setting for 360 degree links (off by default, https and `{url}` only, never used for Grist attachments or flat images, stored in the options of the widget, never in the code). The maintainer's own proxy is a Cloudflare Worker restricted to one domain.
+- Drives for links: Nextcloud, Google Drive and kDrive (the kDrive address must be the one of the page that shows the picture, ending with `/preview/image/NUMBER`). OneDrive links cannot be shown in another page: the widget says so. The test links of the tests are invented values, never the real links of the maintainer. Only Nextcloud has a 360 degree test link.
+- Optional proxy setting for 360 degree links (off by default, https and `{url}` only, never used for Grist attachments or flat images, stored in the options of the widget, never in the code, and the form warns that the address must hold no secret because anyone with access to the document can read it). The maintainer's own proxy is a Cloudflare Worker restricted to one domain; its address is never written in this public repository.
+- Downloads made by the widget itself (attachments, 360 links through the proxy) are limited to 100 MB. When the images of a row do not change, the display is not redrawn.
 - Grist server by default: `grist.numerique.gouv.fr`, as in `pdf_plus`. The display is in the widget, plus a floating window that takes over (one display at a time).
