@@ -10,6 +10,8 @@
   const GOOGLE_ID = /^[A-Za-z0-9_-]{10,}$/;
   // A kDrive share: /app/share/DRIVE_NUMBER/SHARE_UUID.
   const KDRIVE_SHARE = /^\/app\/share\/(\d+)\/([0-9a-fA-F-]{20,})\/?$/;
+  // The page that shows one picture of a kDrive share: /app/share/DRIVE/UUID/preview/TYPE/FILE.
+  const KDRIVE_PREVIEW = /^\/app\/share\/(\d+)\/([0-9a-fA-F-]{20,})\/preview\/[a-z]+\/(\d+)\/?$/;
   const ONEDRIVE_HOSTS = new Set([`1drv.ms`, `onedrive.live.com`]);
 
   // Result for a link that is not converted.
@@ -30,18 +32,44 @@
     };
   }
 
-  // OneDrive: the sharing API takes the share link itself, encoded in base64 without padding.
+  // Base64 without padding, with the characters allowed in an address (as the sharing API expects).
+  function toShareToken(text) {
+    return btoa(text).replace(/=+$/, ``).replace(/\//g, `_`).replace(/\+/g, `-`);
+  }
+
+  // OneDrive: the sharing API takes the share link itself, encoded in base64. The address of the
+  // page of a photo (onedrive.live.com/photos?...&redeem=...) already carries that encoding in its
+  // `redeem` parameter. The second address asks the share link itself for the file.
   function oneDrive(url) {
-    const encoded = btoa(url.href).replace(/=+$/, ``).replace(/\//g, `_`).replace(/\+/g, `-`);
+    const redeem = url.searchParams.get(`redeem`);
+    let shareLink = url.href;
+    let token = toShareToken(url.href);
+    if (redeem && /^[A-Za-z0-9+/_=-]+$/.test(redeem)) {
+      token = redeem.replace(/=+$/, ``).replace(/\//g, `_`).replace(/\+/g, `-`);
+      try {
+        const decoded = new URL(atob(redeem.replace(/_/g, `/`).replace(/-/g, `+`)));
+        if (decoded.protocol === `https:`) shareLink = decoded.href;
+      } catch {
+        // The redeem value is not a link: the page address is used as it is.
+      }
+    }
+    const download = new URL(shareLink);
+    download.searchParams.set(`download`, `1`);
     return {
-      url: `https://api.onedrive.com/v1.0/shares/u!${encoded}/root/content`,
-      alternatives: [],
+      url: `https://api.onedrive.com/v1.0/shares/u!${token}/root/content`,
+      alternatives: [download.href],
       drive: `onedrive`
     };
   }
 
-  // kDrive: the API address of the shared file.
+  // kDrive: the API address of the shared file. The file number is only in the address of the
+  // page that shows the picture (.../preview/image/NUMBER); a plain share address does not hold it.
   function kDrive(url) {
+    const page = KDRIVE_PREVIEW.exec(url.pathname);
+    if (page) {
+      const base = `https://kdrive.infomaniak.com/2/app/${page[1]}/share/${page[2]}/files/${page[3]}`;
+      return { url: `${base}/download`, alternatives: [`${base}/preview`], drive: `kdrive` };
+    }
     const share = KDRIVE_SHARE.exec(url.pathname);
     if (!share) return null;
     const base = `https://kdrive.infomaniak.com/2/app/${share[1]}/share/${share[2]}`;

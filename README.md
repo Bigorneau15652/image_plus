@@ -6,7 +6,7 @@ English first, version française plus bas.
 
 A custom widget for [Grist](https://www.getgrist.com) that shows the images of the selected row, including 360 degree panoramas. It is being built in small versions.
 
-Status: version 0.4. The widget shows the images of the selected row one at a time, with the name, a counter, previous and next buttons and the arrow keys, and reports the values it ignored. Share links of Nextcloud, Google Drive, OneDrive and kDrive are converted automatically (the public share must show a picture; the commercial drives do not document these addresses, so they may stop working one day). An attachment marked `[360]` opens in a panoramic view (drag to look around, mouse wheel or the + and - buttons to zoom, left and right arrow keys to change image); a picture larger than the graphics card accepts is reduced automatically and the widget says so. A 360 degree link is still shown flat, with a note: the panoramic view of links comes in a later version. Attachments need the access level "Full document access"; links work with "Read table".
+Status: version 0.4.1. The widget shows the images of the selected row one at a time, with the name, a counter, previous and next buttons and the arrow keys, and reports the values it ignored. Share links of Nextcloud, Google Drive, OneDrive and kDrive are converted automatically (the public share must show a picture; the commercial drives do not document these addresses, so they may stop working one day). An attachment marked `[360]` opens in a panoramic view (drag to look around, mouse wheel or the + and - buttons to zoom, left and right arrow keys to change image); a picture larger than the graphics card accepts is reduced automatically and the widget says so. A 360 degree link is still shown flat, with a note: the panoramic view of links comes in a later version. Attachments need the access level "Full document access"; links work with "Read table".
 
 ### Columns
 
@@ -17,6 +17,8 @@ In the right-hand panel of Grist, under the access level, choose the columns. Al
 - Names: a column of type Text with one name per line. The first lines name the attachments, the following lines name the links. A blank line keeps the default name ("Image N"). Add `[360]` to the name of a 360 degree panorama, for example `Hall [360]`: the marker is not shown in the caption. Without the names column, no image is shown as a 360 degree panorama.
 
 A cell may hold several images. Accepted images: PNG, JPEG, GIF, BMP, WebP, SVG and AVIF. Links must be absolute https addresses without embedded credentials. Other formats (PDF, DXF, TIFF, HEIC, RAW...) are reported in a banner naming the column and examples.
+
+For kDrive, paste the address shown in the browser when the picture is open in the share (it ends with `/preview/image/NUMBER`): it holds the file number that the widget needs. For OneDrive, the share link is used; recent personal OneDrive links may refuse to be shown in another page.
 
 ### Install
 
@@ -36,7 +38,7 @@ If your Grist server is not `grist.numerique.gouv.fr`, edit three places in `ind
 
 ### Development
 
-`npm test` runs the tests of the cell analysis (`images.js`), of the links of drives (`drives.js`) and of the size decisions of the 360 degree view (`panorama.js`) with Node. The pages reference their scripts with `?v=0.4.0`: change that number in `index.html` with every release so that browsers fetch the new files at once.
+`npm test` runs the tests of the cell analysis (`images.js`), of the links of drives (`drives.js`) and of the size decisions of the 360 degree view (`panorama.js`) with Node. The pages reference their scripts with `?v=0.4.1`: change that number in `index.html` with every release so that browsers fetch the new files at once.
 
 ### Files
 
@@ -54,7 +56,7 @@ Licence: MIT.
 
 Widget personnalisé pour [Grist](https://www.getgrist.com) qui affiche les images de la ligne sélectionnée, y compris les panoramas à 360°. Il est construit par petites versions.
 
-État : version 0.4. Le widget affiche une à une les images de la ligne sélectionnée, avec le nom, un compteur, les boutons précédent et suivant et les flèches du clavier, et signale les valeurs ignorées. Les liens de partage Nextcloud, Google Drive, OneDrive et kDrive sont convertis automatiquement (le partage public doit désigner une image ; les drives commerciaux ne documentent pas ces adresses, elles peuvent donc cesser de fonctionner un jour). Une pièce jointe marquée `[360]` s'ouvre en vue panoramique (glisser pour regarder autour, molette ou boutons + et - pour zoomer, flèches gauche et droite pour changer d'image) ; une image plus grande que ce que la carte graphique accepte est réduite automatiquement et le widget l'indique. Un lien 360° est encore affiché à plat, avec une note : la vue panoramique des liens arrive dans une prochaine version. Les pièces jointes demandent le niveau d'accès « Accès complet au document » ; les liens fonctionnent avec « Lire la table ».
+État : version 0.4.1. Le widget affiche une à une les images de la ligne sélectionnée, avec le nom, un compteur, les boutons précédent et suivant et les flèches du clavier, et signale les valeurs ignorées. Les liens de partage Nextcloud, Google Drive, OneDrive et kDrive sont convertis automatiquement (le partage public doit désigner une image ; les drives commerciaux ne documentent pas ces adresses, elles peuvent donc cesser de fonctionner un jour). Une pièce jointe marquée `[360]` s'ouvre en vue panoramique (glisser pour regarder autour, molette ou boutons + et - pour zoomer, flèches gauche et droite pour changer d'image) ; une image plus grande que ce que la carte graphique accepte est réduite automatiquement et le widget l'indique. Un lien 360° est encore affiché à plat, avec une note : la vue panoramique des liens arrive dans une prochaine version. Les pièces jointes demandent le niveau d'accès « Accès complet au document » ; les liens fonctionnent avec « Lire la table ».
 
 ### Colonnes
 
@@ -65,6 +67,8 @@ Dans le panneau de droite de Grist, sous le niveau d'accès, choisissez les colo
 - Noms : une colonne de type Texte avec un nom par ligne. Les premières lignes nomment les pièces jointes, les suivantes nomment les liens. Une ligne vide garde le nom par défaut (« Image N »). Ajoutez `[360]` au nom d'un panorama à 360°, par exemple `Hall [360]` : le repère n'apparaît pas dans la légende. Sans la colonne des noms, aucune image n'est affichée en 360°.
 
 Une cellule peut contenir plusieurs images. Images acceptées : PNG, JPEG, GIF, BMP, WebP, SVG et AVIF. Les liens doivent être des adresses https absolues sans identifiants. Les autres formats (PDF, DXF, TIFF, HEIC, RAW...) sont signalés dans un bandeau qui nomme la colonne et donne des exemples.
+
+Pour kDrive, collez l'adresse affichée par le navigateur quand l'image est ouverte dans le partage (elle se termine par `/preview/image/NUMERO`) : elle contient le numéro de fichier dont le widget a besoin. Pour OneDrive, le lien de partage est utilisé ; les liens récents de OneDrive personnel peuvent refuser d'être affichés dans une autre page.
 
 ### Installation
 
