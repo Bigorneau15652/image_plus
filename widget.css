@@ -5,6 +5,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body {
+  height: 100%;
   margin: 0;
   background: #ffffff;
   color: #1f2933;
@@ -12,11 +13,18 @@ html, body {
   font-size: 14px;
 }
 
-#app { padding: 10px; }
+/* The page is a column: banners on top, then the viewer that takes the rest of the height. */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px;
+}
 
 /* Warning banner: solid colours, wraps on narrow panels, never truncated. */
 #notice {
-  margin: 0 0 10px;
+  flex-shrink: 0;
+  margin: 0 0 8px;
   padding: 10px 12px;
   border: 2px solid #8a5a00;
   border-radius: 6px;
@@ -29,33 +37,108 @@ html, body {
 }
 #notice[hidden] { display: none; }
 
-#message, #preview-note {
-  margin: 12px 8px;
+#message {
+  margin: 24px 8px;
   color: #3e4c59;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   text-align: center;
   white-space: normal;
   overflow-wrap: anywhere;
 }
 #message:empty { display: none; }
-#preview-note[hidden] { display: none; }
 
-#list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-
-.image-item {
+#viewer {
   display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+#viewer[hidden] { display: none; }
+
+/* The picture is shown whole, on a neutral dark background. */
+#stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  border-radius: 6px;
+  background: #323f4b;
+  overflow: hidden;
+}
+#photo {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+#photo[hidden] { display: none; }
+#status {
+  position: absolute;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1f2933;
+  font-size: 13px;
+}
+#status:empty { display: none; }
+
+#error, #note360 {
+  flex-shrink: 0;
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#error { border: 2px solid #8a1c1c; background: #ffd9d9; color: #4a0e0e; }
+#note360 { border: 1px solid #1c5d8c; background: #e3f0fa; color: #0b3a5c; }
+#error[hidden], #note360[hidden] { display: none; }
+#error a { color: #4a0e0e; font-weight: 600; }
+
+/* Bar under the picture: previous, name with the 360 marker, counter, next. */
+#bar {
+  display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid #9aa5b1;
-  border-radius: 6px;
-  background: #f5f7fa;
+  margin-top: 8px;
+}
+#caption {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   color: #1f2933;
   line-height: 1.3;
   white-space: normal;
   overflow-wrap: anywhere;
 }
+#counter { flex-shrink: 0; color: #3e4c59; font-size: 13px; }
+#bar.single .nav-button, #bar.single #counter { display: none; }
+
+.nav-button {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: 2px solid #1c5d8c;
+  border-radius: 6px;
+  background: #1c5d8c;
+  color: #ffffff;
+  font: inherit;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.nav-button:hover { background: #2a74ab; border-color: #2a74ab; }
+.nav-button:focus-visible { outline: 3px solid #f2b705; outline-offset: 2px; }
 
 /* Marker of a 360 degree panorama */
 .badge-360 {
@@ -67,3 +150,4 @@ html, body {
   font-size: 12px;
   font-weight: 700;
 }
+.badge-360[hidden] { display: none; }

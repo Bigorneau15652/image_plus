@@ -5,24 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!--
     Content Security Policy: only this site and the Grist host may provide scripts.
+    Pictures may come from any https address, because the drives that hold them differ.
     If you use another Grist server, change the host below AND in the script tag.
   -->
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' https://grist.numerique.gouv.fr; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+        content="default-src 'self'; script-src 'self' https://grist.numerique.gouv.fr; img-src 'self' data: https:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Image Plus</title>
-  <link rel="stylesheet" href="widget.css?v=0.1.0">
+  <link rel="stylesheet" href="widget.css?v=0.2.0">
   <script src="https://grist.numerique.gouv.fr/grist-plugin-api.js"></script>
 </head>
 <body>
   <main id="app">
     <div id="notice" role="status" hidden></div>
     <p id="message"></p>
-    <p id="preview-note" data-i18n="previewNote"></p>
-    <ul id="list"></ul>
+
+    <section id="viewer" hidden>
+      <div id="stage">
+        <img id="photo" alt="" referrerpolicy="no-referrer" hidden>
+        <p id="status"></p>
+      </div>
+      <p id="error" role="alert" hidden></p>
+      <p id="note360" hidden></p>
+      <div id="bar">
+        <button type="button" id="prev" class="nav-button" data-i18n-title="previousImage">&#8249;</button>
+        <div id="caption">
+          <span id="name"></span>
+          <span id="badge" class="badge-360" hidden></span>
+        </div>
+        <span id="counter"></span>
+        <button type="button" id="next" class="nav-button" data-i18n-title="nextImage">&#8250;</button>
+      </div>
+    </section>
   </main>
 
-  <script src="shared/i18n.js?v=0.1.0"></script>
-  <script src="images.js?v=0.1.0"></script>
-  <script src="widget.js?v=0.1.0"></script>
+  <script src="shared/i18n.js?v=0.2.0"></script>
+  <script src="images.js?v=0.2.0"></script>
+  <script src="drives.js?v=0.2.0"></script>
+  <script src="widget.js?v=0.2.0"></script>
 </body>
 </html>
