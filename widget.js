@@ -1,22 +1,16 @@
-// Image Plus widget (version 0.7): shows the images of the selected Grist row one at a time,
-// with the name, the counter, previous and next buttons and the arrow keys. Images come from
-// attachments or from https links (Nextcloud, Google Drive and kDrive share links are converted).
-// An attachment marked 360, or a 360 link when the proxy setting is on, opens in the panoramic
-// viewer. The images can be shown in a floating window (second screen): one display at a time.
-// This file talks to Grist and decides what to show; display.js draws it.
+// Image Plus widget (version 0.8): the entry point. It talks to Grist (selected row, options,
+// columns), turns the cells into images, decides what to show and where: in the widget page or in
+// the floating window (one display at a time). The drawing is done by display.js, the floating
+// window by float-control.js and float.js, the settings form by settings.js.
 (function () {
   const { t, applyTranslations } = window.imagePlusI18n;
   const { parseImages, MAX_IMAGES } = window.imagePlusImages;
   const { toImageUrl } = window.imagePlusDrives;
-  const { checkProxyTemplate, buildProxyUrl, activeProxy } = window.imagePlusProxy;
+  const { buildProxyUrl, activeProxy } = window.imagePlusProxy;
 
   const MAX_SAMPLES = 3;
   // A Grist download token is renewed when less than this time is left.
   const TOKEN_MARGIN_MS = 30000;
-  const FLOAT_NAME = `imageplus-float`;
-  const FLOAT_URL = `float.html?v=0.7.0`;
-  const HANDSHAKE_INTERVAL_MS = 250;
-  const CLOSE_CHECK_MS = 1000;
   // A picture larger than this is not downloaded: it would fill the memory of the browser tab.
   const MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024;
   const MAX_DOWNLOAD_MB = MAX_DOWNLOAD_BYTES / (1024 * 1024);
@@ -34,10 +28,23 @@
   const state = {
     images: [], current: 0, showVersion: 0, token: null, options: {}, proxy: null,
     rejectedNotice: ``, actionNotice: ``, empty: ``, signature: ``,
-    popup: null, floating: false, closeTimer: null
+    floating: false
   };
 
   const display = window.imagePlusDisplay.createDisplay(el, { onFlatLoaded: preloadNext });
+  const floatControl = window.imagePlusFloatControl.createFloatControl({
+    url: `float.html?v=0.8.0`,
+    name: `imageplus-float`,
+    onStep: step,
+    onClosed: leaveWindow
+  });
+  const settings = window.imagePlusSettings.createSettings(
+    {
+      panel: $(`settings`), enabled: $(`proxyEnabled`), url: $(`proxyUrl`), error: $(`settingsError`),
+      save: $(`settingsSave`), cancel: $(`settingsCancel`)
+    },
+    (options) => grist.widgetApi.setOptions(options)
+  );
 
   // ---------------------------------------------------------------- Messages
 
@@ -178,12 +185,12 @@
     const forWindow = state.floating;
 
     const lite = { label: image.label, is360: image.is360, position: state.current + 1, count, notes: [] };
-    if (forWindow) postToWindow({ type: `imageplus:begin`, item: lite });
+    if (forWindow) floatControl.post({ type: `imageplus:begin`, item: lite });
     else display.begin(lite);
 
     const item = await resolveItem(image, state.current, forWindow);
     if (version !== state.showVersion || forWindow !== state.floating) return;
-    if (forWindow) postToWindow({ type: `imageplus:show`, item });
+    if (forWindow) floatControl.post({ type: `imageplus:show`, item });
     else display.show(item);
   }
 
@@ -215,7 +222,7 @@
       refreshNotice();
     }
     setMessage(state.floating ? `` : text);
-    if (state.floating) postToWindow({ type: `imageplus:empty`, text });
+    if (state.floating) floatControl.post({ type: `imageplus:empty`, text });
   }
 
   // Called by Grist each time the selected row (or its content) changes.
@@ -242,80 +249,12 @@
 
   // ---------------------------------------------------------- Floating window
 
-  function windowIsOpen() {
-    return Boolean(state.popup) && !state.popup.closed;
-  }
-
-  // Sends a message to the floating window, which only accepts messages of our own site.
-  function postToWindow(message) {
-    if (!windowIsOpen()) return;
-    try {
-      state.popup.postMessage(message, location.origin);
-    } catch {
-      // The window is closing: the close check will notice.
-    }
-  }
-
-  // Opens the window, or finds the one that is already open. Must run inside a click.
-  // Returns false when the browser blocks it.
-  function ensureWindow() {
-    if (windowIsOpen()) return true;
-    const width = Math.min(1200, Math.max(600, screen.availWidth - 100));
-    const height = Math.min(860, Math.max(400, screen.availHeight - 100));
-    const opened = window.open(``, FLOAT_NAME, `popup=yes,width=${width},height=${height},resizable=yes`);
-    if (!opened) return false;
-    // The link between the window and the widget is deliberately kept: Grist runs widgets in
-    // a sandboxed frame, and such a frame may only navigate windows it is the opener of.
-    state.popup = opened;
-    return true;
-  }
-
-  // Pings the window until its page answers, so that we know its message listener is ready.
-  function waitForWindow(timeoutMs) {
-    return new Promise((resolve) => {
-      let finished = false;
-      const finish = (answered) => {
-        if (finished) return;
-        finished = true;
-        clearInterval(timer);
-        clearTimeout(deadline);
-        window.removeEventListener(`message`, onMessage);
-        resolve(answered);
-      };
-      const onMessage = (event) => {
-        if (event.source === state.popup && event.origin === location.origin &&
-            event.data && event.data.type === `imageplus:ready`) finish(true);
-      };
-      const ping = () => {
-        try {
-          state.popup.postMessage({ type: `imageplus:hello` }, location.origin);
-        } catch {
-          // Opaque origin or closed window: the deadline ends the wait.
-        }
-      };
-      window.addEventListener(`message`, onMessage);
-      const timer = setInterval(ping, HANDSHAKE_INTERVAL_MS);
-      const deadline = setTimeout(() => finish(false), timeoutMs);
-      ping();
-    });
-  }
-
-  // Makes sure the window shows our page and is listening.
-  async function connectWindow() {
-    if (await waitForWindow(700)) return true;
-    state.popup.location.href = FLOAT_URL;
-    return waitForWindow(10000);
-  }
-
   // Back to the widget: the window is closed, the widget draws the current image again.
   function leaveWindow() {
-    clearInterval(state.closeTimer);
-    state.closeTimer = null;
     if (!state.floating) return;
     state.floating = false;
+    floatControl.close();
     el.floating.hidden = true;
-    if (windowIsOpen()) state.popup.close();
-    state.popup = null;
     if (state.images.length) {
       el.viewer.hidden = false;
       showImage(state.current);
@@ -324,82 +263,23 @@
     }
   }
 
-  // Called by the button of the bar: moves the display to the floating window.
+  // Called by the button of the caption line: moves the display to the floating window.
   async function enterWindow() {
     if (state.floating) return;
-    if (!ensureWindow()) {
-      state.actionNotice = t(`popupBlocked`);
-      refreshNotice();
-      return;
-    }
-    state.actionNotice = ``;
+    const result = await floatControl.open();
+    state.actionNotice = result === `blocked` ? t(`popupBlocked`) : result === `silent` ? t(`floatFailed`) : ``;
     refreshNotice();
-    if (!await connectWindow()) {
-      if (windowIsOpen()) state.popup.close();
-      state.popup = null;
-      state.actionNotice = t(`floatFailed`);
-      refreshNotice();
-      return;
-    }
+    if (result !== `ok`) return;
     state.floating = true;
     display.clear();
     el.viewer.hidden = true;
     setMessage(``);
     el.floating.hidden = false;
-    state.closeTimer = setInterval(() => {
-      if (!windowIsOpen()) leaveWindow();
-    }, CLOSE_CHECK_MS);
     if (state.images.length) showImage(state.current);
-    else postToWindow({ type: `imageplus:empty`, text: state.empty });
+    else floatControl.post({ type: `imageplus:empty`, text: state.empty });
   }
-
-  // Messages sent by the floating window: only our own page may talk to us.
-  window.addEventListener(`message`, (event) => {
-    if (event.origin !== location.origin || event.source !== state.popup || !event.data) return;
-    const message = event.data;
-    if (message.type === `imageplus:step` && (message.delta === 1 || message.delta === -1)) step(message.delta);
-    else if (message.type === `imageplus:closed`) setTimeout(() => {
-      if (!windowIsOpen()) leaveWindow();
-    }, 0);
-  });
 
   // ----------------------------------------------------------------- Settings
-
-  const form = {
-    panel: $(`settings`), enabled: $(`proxyEnabled`), url: $(`proxyUrl`), error: $(`settingsError`),
-    save: $(`settingsSave`), cancel: $(`settingsCancel`)
-  };
-
-  // Opens the settings form with the stored values.
-  function openSettings() {
-    form.enabled.checked = state.options.proxyEnabled === true;
-    form.url.value = typeof state.options.proxyUrl === `string` ? state.options.proxyUrl : ``;
-    form.error.hidden = true;
-    form.panel.hidden = false;
-    form.enabled.focus();
-  }
-
-  // Hides the settings form without saving.
-  function closeSettings() {
-    form.panel.hidden = true;
-  }
-
-  // Checks the form and stores the options. An invalid address is refused only when the proxy is on.
-  function saveSettings() {
-    const enabled = form.enabled.checked;
-    const checked = checkProxyTemplate(form.url.value);
-    if (enabled && !checked.ok) {
-      const keys = {
-        empty: `proxyErrorEmpty`, https: `proxyErrorHttps`, credentials: `proxyErrorCredentials`,
-        placeholder: `proxyErrorPlaceholder`, host: `proxyErrorHost`
-      };
-      form.error.textContent = t(keys[checked.reason]);
-      form.error.hidden = false;
-      return;
-    }
-    grist.widgetApi.setOptions({ proxyEnabled: enabled, proxyUrl: checked.ok ? checked.template : `` });
-    closeSettings();
-  }
 
   // Called by Grist with the stored options. A change of the proxy redraws the current 360 link.
   function onOptions(options) {
@@ -415,22 +295,20 @@
 
   applyTranslations(document);
   setMessage(t(`pickRow`));
-  form.save.addEventListener(`click`, saveSettings);
-  form.cancel.addEventListener(`click`, closeSettings);
   el.prev.addEventListener(`click`, () => step(-1));
   el.next.addEventListener(`click`, () => step(1));
   el.floatButton.addEventListener(`click`, enterWindow);
   el.backButton.addEventListener(`click`, leaveWindow);
   document.addEventListener(`keydown`, (event) => {
-    if (event.key === `Escape` && !form.panel.hidden) closeSettings();
-    else if (!form.panel.hidden) return;
+    if (event.key === `Escape` && settings.isOpen()) settings.close();
+    else if (settings.isOpen()) return;
     else if (event.key === `ArrowLeft`) step(-1);
     else if (event.key === `ArrowRight`) step(1);
   });
 
   grist.ready({
     requiredAccess: `read table`,
-    onEditOptions: openSettings,
+    onEditOptions: () => settings.open(state.options),
     columns: [
       {
         name: `attachments`,

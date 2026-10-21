@@ -1,10 +1,36 @@
 {
   "name": "image_plus",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Grist custom widget: image viewer with 360 degree panoramas",
+  "homepage": "https://github.com/Bigorneau15652/image_plus",
   "private": true,
   "license": "MIT",
   "scripts": {
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "test:integration": "node --test --test-concurrency=1 tests/integration/*.test.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  },
+  "grist": {
+    "name": "Image Plus",
+    "url": "https://bigorneau15652.github.io/image_plus/index.html",
+    "widgetId": "@Bigorneau15652/image_plus",
+    "published": true,
+    "accessLevel": "read table",
+    "renderAfterReady": false,
+    "description": "Shows the images of the selected row (attachments or links to Nextcloud, Google Drive and kDrive), 360 degree panoramas and a floating window for a second screen.",
+    "authors": [
+      {
+        "name": "Olivier Holweck",
+        "url": "https://github.com/Bigorneau15652"
+      }
+    ],
+    "isGristLabsMaintained": false
+  },
+  "archive": {
+    "domains": [
+      "grist.numerique.gouv.fr"
+    ]
   }
 }

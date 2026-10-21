@@ -21,7 +21,9 @@ image_plus is a Grist custom widget: it shows the images of the selected row, in
 ## Tests and versions
 
 - `npm test` runs the Node tests of the pure modules (`images.js`, `drives.js`, `item.js`, `panorama.js`, `proxy.js`). Add a test for every behaviour of the cell analysis and of the other pure modules.
-- Pages reference their scripts with `?v=X.Y.Z`: change that number in `index.html` with every release.
+- `npm run test:integration` runs the browser tests of `tests/integration/` (Playwright, a development tool the widget never loads). Run them before every release; they are not part of the automatic GitHub check. Add a scenario for every visible behaviour.
+- Structure: `widget.js` (entry point), `display.js` (drawing, shared with the floating window), `float-control.js` and `float.js` (floating window), `settings.js` (settings form). Keep each file to one role.
+- Pages reference their scripts with `?v=X.Y.Z`: change that number in `index.html` and `float.html` with every release, and in `package.json`. Add a section to `CHANGELOG.md`.
 - Commit message: `Version 0.2.0 : short description in French`. Work on a branch, push, open a draft pull request.
 - The widget cannot be tried inside Grist from a session: give the maintainer the list of manual tests after each version.
 
