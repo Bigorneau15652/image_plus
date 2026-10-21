@@ -1,4 +1,4 @@
-// Image Plus widget (version 0.6): shows the images of the selected Grist row one at a time,
+// Image Plus widget (version 0.7): shows the images of the selected Grist row one at a time,
 // with the name, the counter, previous and next buttons and the arrow keys. Images come from
 // attachments or from https links (Nextcloud, Google Drive and kDrive share links are converted).
 // An attachment marked 360, or a 360 link when the proxy setting is on, opens in the panoramic
@@ -14,9 +14,12 @@
   // A Grist download token is renewed when less than this time is left.
   const TOKEN_MARGIN_MS = 30000;
   const FLOAT_NAME = `imageplus-float`;
-  const FLOAT_URL = `float.html?v=0.6.1`;
+  const FLOAT_URL = `float.html?v=0.7.0`;
   const HANDSHAKE_INTERVAL_MS = 250;
   const CLOSE_CHECK_MS = 1000;
+  // A picture larger than this is not downloaded: it would fill the memory of the browser tab.
+  const MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024;
+  const MAX_DOWNLOAD_MB = MAX_DOWNLOAD_BYTES / (1024 * 1024);
 
   const $ = (id) => document.getElementById(id);
   const el = {
@@ -30,7 +33,7 @@
   // request started is ignored.
   const state = {
     images: [], current: 0, showVersion: 0, token: null, options: {}, proxy: null,
-    rejectedNotice: ``, actionNotice: ``, empty: ``,
+    rejectedNotice: ``, actionNotice: ``, empty: ``, signature: ``,
     popup: null, floating: false, closeTimer: null
   };
 
@@ -87,11 +90,20 @@
     return `${state.token.baseUrl}/attachments/${id}/download?auth=${state.token.token}`;
   }
 
-  // Downloads a picture to memory (an attachment, or a 360 link through the proxy).
+  // Downloads a picture to memory (an attachment, or a 360 link through the proxy). A picture
+  // above MAX_DOWNLOAD_BYTES is refused, from its announced size first and from its real size next.
   async function downloadBlob(address) {
     const response = await fetch(address, { referrerPolicy: `no-referrer`, credentials: `omit` });
     if (!response.ok) throw new Error(`download`);
-    return response.blob();
+    if (Number(response.headers.get(`content-length`)) > MAX_DOWNLOAD_BYTES) throw new Error(`tooLarge`);
+    const blob = await response.blob();
+    if (blob.size > MAX_DOWNLOAD_BYTES) throw new Error(`tooLarge`);
+    return blob;
+  }
+
+  // Message for a failed download: a dedicated one when the picture is too large.
+  function downloadFailureText(error, fallbackKey) {
+    return error && error.message === `tooLarge` ? t(`downloadTooLarge`, { max: MAX_DOWNLOAD_MB }) : t(fallbackKey);
   }
 
   // All the addresses to try for a link, the most likely first.
@@ -135,8 +147,8 @@
         item.blob = await downloadBlob(viaProxy ? buildProxyUrl(state.proxy, toImageUrl(image.href).url) : address);
         item.panorama = true;
         return item;
-      } catch {
-        item.notes.push(t(failureKey));
+      } catch (error) {
+        item.notes.push(downloadFailureText(error, failureKey));
       }
     }
 
@@ -146,8 +158,8 @@
       // The floating window cannot use the Grist token: the picture is handed over as a blob.
       try {
         item.blob = await downloadBlob(address);
-      } catch {
-        item.errorText = t(`attachmentDownloadFailed`);
+      } catch (error) {
+        item.errorText = downloadFailureText(error, `attachmentDownloadFailed`);
       }
     } else {
       item.candidates = [address];
@@ -185,6 +197,7 @@
     preload.src = toImageUrl(next.href).url;
   }
 
+  // Moves to the previous (-1) or next (1) image of the row, when there are several.
   function step(delta) {
     if (state.images.length > 1) showImage(state.current + delta);
   }
@@ -194,6 +207,7 @@
     state.images = [];
     state.showVersion += 1;
     state.empty = text;
+    state.signature = ``;
     display.clear();
     el.viewer.hidden = true;
     if (!keepNotice) {
@@ -213,8 +227,14 @@
     const { images, rejected } = parseImages(row, (n) => t(`imageN`, { n }));
     state.rejectedNotice = rejected.length ? rejectedNotice(rejected, mapping) : ``;
     refreshNotice();
+    // Grist calls us again for any change of the row, even a cell that is not an image column:
+    // when the images are the same, the display is left alone (no new download, no jump to image 1).
+    const signature = JSON.stringify(images.map((image) => [image.kind, image.id, image.href, image.label, image.is360]));
+    const unchanged = signature === state.signature && images.length > 0;
     state.images = images;
     if (!images.length) return showEmpty(rejected.length ? `` : t(`noImages`), true);
+    state.signature = signature;
+    if (unchanged) return;
     setMessage(``);
     el.viewer.hidden = state.floating;
     showImage(0);
@@ -226,6 +246,7 @@
     return Boolean(state.popup) && !state.popup.closed;
   }
 
+  // Sends a message to the floating window, which only accepts messages of our own site.
   function postToWindow(message) {
     if (!windowIsOpen()) return;
     try {
@@ -358,6 +379,7 @@
     form.enabled.focus();
   }
 
+  // Hides the settings form without saving.
   function closeSettings() {
     form.panel.hidden = true;
   }
