@@ -6,7 +6,7 @@ English first, version française plus bas.
 
 A custom widget for [Grist](https://www.getgrist.com) that shows the images of the selected row, including 360 degree panoramas. It is being built in small versions.
 
-Status: version 0.5.0. The widget shows the images of the selected row one at a time, with the name, a counter, previous and next buttons and the arrow keys, and reports the values it ignored. Share links of Nextcloud, Google Drive and kDrive are converted automatically (the public share must show a picture; the commercial drives do not document these addresses, so they may stop working one day). An attachment marked `[360]` opens in a panoramic view (drag to look around, mouse wheel or the + and - buttons to zoom, left and right arrow keys to change image); a picture larger than the graphics card accepts is reduced automatically and the widget says so. A 360 degree link is shown flat, with a note, unless the optional proxy is turned on (see below). Attachments need the access level "Full document access"; links work with "Read table".
+Status: version 0.6.0. The widget shows the images of the selected row one at a time, with the name, a counter, previous and next buttons and the arrow keys, and reports the values it ignored. Share links of Nextcloud, Google Drive and kDrive are converted automatically (the public share must show a picture; the commercial drives do not document these addresses, so they may stop working one day). An attachment marked `[360]` opens in a panoramic view (drag to look around, mouse wheel or the + and - buttons to zoom, left and right arrow keys to change image); a picture larger than the graphics card accepts is reduced automatically and the widget says so. A 360 degree link is shown flat, with a note, unless the optional proxy is turned on (see below). Attachments need the access level "Full document access"; links work with "Read table".
 
 ### Columns
 
@@ -19,6 +19,10 @@ In the right-hand panel of Grist, under the access level, choose the columns. Al
 A cell may hold several images. Accepted images: PNG, JPEG, GIF, BMP, WebP, SVG and AVIF. Links must be absolute https addresses without embedded credentials. Other formats (PDF, DXF, TIFF, HEIC, RAW...) are reported in a banner naming the column and examples.
 
 For kDrive, paste the address shown in the browser when the picture is open in the share (it ends with `/preview/image/NUMBER`): it holds the file number that the widget needs. OneDrive links cannot be shown in another page: the widget says so and offers to open the link in a new tab.
+
+### Floating window (second screen)
+
+The arrow button at the end of the bar under the picture opens the images in a floating window that you can drag to another screen. Only one display is active at a time: while the window is open, the widget shows a message and a button "Back to the widget". The window has its own previous and next buttons and arrow keys, and it follows the row selected in Grist. Closing the window, or the button, brings the display back into the widget. If nothing opens, allow pop-ups for your Grist site in the browser.
 
 ### Proxy for 360 degree links (optional)
 
@@ -42,13 +46,16 @@ If your Grist server is not `grist.numerique.gouv.fr`, edit three places in `ind
 
 ### Development
 
-`npm test` runs the tests of the cell analysis (`images.js`), of the links of drives (`drives.js`) of the proxy setting (`proxy.js`) and of the size decisions of the 360 degree view (`panorama.js`) with Node. The pages reference their scripts with `?v=0.5.0`: change that number in `index.html` with every release so that browsers fetch the new files at once.
+`npm test` runs the tests of the cell analysis (`images.js`), of the links of drives (`drives.js`) of the proxy setting (`proxy.js`) and of the size decisions of the 360 degree view (`panorama.js`) with Node. The pages reference their scripts with `?v=0.6.0`: change that number in `index.html` with every release so that browsers fetch the new files at once.
 
 ### Files
 
 - `index.html`, `widget.js`, `widget.css`: the widget.
 - `images.js`: turns the cell values into a list of images (no page access, tested with Node).
 - `drives.js`: turns a link of a drive into the addresses of the picture (Nextcloud, Google Drive, OneDrive, kDrive, tested with Node).
+- `display.js`: draws one image (flat or 360 degree) in a viewer area; shared by the widget and the floating window.
+- `item.js`: describes and checks what is handed over to a display (tested with Node).
+- `float.html`, `float.js`: the floating window.
 - `proxy.js`: checks the proxy setting and builds the proxied address (no page access, tested with Node).
 - `panorama.js`: decides whether a picture is reduced for the graphics card (no page access, tested with Node).
 - `vendor/pannellum/`: the Pannellum viewer, with its licence.
@@ -61,7 +68,7 @@ Licence: MIT.
 
 Widget personnalisé pour [Grist](https://www.getgrist.com) qui affiche les images de la ligne sélectionnée, y compris les panoramas à 360°. Il est construit par petites versions.
 
-État : version 0.5.0. Le widget affiche une à une les images de la ligne sélectionnée, avec le nom, un compteur, les boutons précédent et suivant et les flèches du clavier, et signale les valeurs ignorées. Les liens de partage Nextcloud, Google Drive et kDrive sont convertis automatiquement (le partage public doit désigner une image ; les drives commerciaux ne documentent pas ces adresses, elles peuvent donc cesser de fonctionner un jour). Une pièce jointe marquée `[360]` s'ouvre en vue panoramique (glisser pour regarder autour, molette ou boutons + et - pour zoomer, flèches gauche et droite pour changer d'image) ; une image plus grande que ce que la carte graphique accepte est réduite automatiquement et le widget l'indique. Un lien 360° est affiché à plat, avec une note, sauf si le proxy facultatif est activé (voir plus bas). Les pièces jointes demandent le niveau d'accès « Accès complet au document » ; les liens fonctionnent avec « Lire la table ».
+État : version 0.6.0. Le widget affiche une à une les images de la ligne sélectionnée, avec le nom, un compteur, les boutons précédent et suivant et les flèches du clavier, et signale les valeurs ignorées. Les liens de partage Nextcloud, Google Drive et kDrive sont convertis automatiquement (le partage public doit désigner une image ; les drives commerciaux ne documentent pas ces adresses, elles peuvent donc cesser de fonctionner un jour). Une pièce jointe marquée `[360]` s'ouvre en vue panoramique (glisser pour regarder autour, molette ou boutons + et - pour zoomer, flèches gauche et droite pour changer d'image) ; une image plus grande que ce que la carte graphique accepte est réduite automatiquement et le widget l'indique. Un lien 360° est affiché à plat, avec une note, sauf si le proxy facultatif est activé (voir plus bas). Les pièces jointes demandent le niveau d'accès « Accès complet au document » ; les liens fonctionnent avec « Lire la table ».
 
 ### Colonnes
 
@@ -74,6 +81,10 @@ Dans le panneau de droite de Grist, sous le niveau d'accès, choisissez les colo
 Une cellule peut contenir plusieurs images. Images acceptées : PNG, JPEG, GIF, BMP, WebP, SVG et AVIF. Les liens doivent être des adresses https absolues sans identifiants. Les autres formats (PDF, DXF, TIFF, HEIC, RAW...) sont signalés dans un bandeau qui nomme la colonne et donne des exemples.
 
 Pour kDrive, collez l'adresse affichée par le navigateur quand l'image est ouverte dans le partage (elle se termine par `/preview/image/NUMERO`) : elle contient le numéro de fichier dont le widget a besoin. Les liens OneDrive ne peuvent pas être affichés dans une autre page : le widget l'indique et propose d'ouvrir le lien dans un nouvel onglet.
+
+### Fenêtre flottante (deuxième écran)
+
+Le bouton fléché au bout de la barre sous l'image ouvre les images dans une fenêtre flottante que vous pouvez glisser vers un autre écran. Une seule vue est active à la fois : tant que la fenêtre est ouverte, le widget affiche un message et un bouton « Revenir dans le widget ». La fenêtre a ses propres boutons précédent et suivant et ses flèches du clavier, et elle suit la ligne sélectionnée dans Grist. Fermer la fenêtre, ou le bouton, ramène l'affichage dans le widget. Si rien ne s'ouvre, autorisez les fenêtres surgissantes pour votre site Grist dans le navigateur.
 
 ### Proxy pour les liens 360° (facultatif)
 
