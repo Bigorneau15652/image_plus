@@ -14,14 +14,14 @@
   // A Grist download token is renewed when less than this time is left.
   const TOKEN_MARGIN_MS = 30000;
   const FLOAT_NAME = `imageplus-float`;
-  const FLOAT_URL = `float.html?v=0.6.0`;
+  const FLOAT_URL = `float.html?v=0.6.1`;
   const HANDSHAKE_INTERVAL_MS = 250;
   const CLOSE_CHECK_MS = 1000;
 
   const $ = (id) => document.getElementById(id);
   const el = {
     notice: $(`notice`), message: $(`message`), viewer: $(`viewer`), photo: $(`photo`),
-    status: $(`status`), pano: $(`pano`), error: $(`error`), note: $(`note360`), bar: $(`bar`),
+    status: $(`status`), pano: $(`pano`), error: $(`error`), note: $(`note360`),
     name: $(`name`), badge: $(`badge`), counter: $(`counter`), prev: $(`prev`), next: $(`next`),
     floatButton: $(`floatButton`), floating: $(`floating`), backButton: $(`backButton`)
   };
