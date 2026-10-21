@@ -6,7 +6,7 @@ English first, version française plus bas.
 
 A custom widget for [Grist](https://www.getgrist.com) that shows the images of the selected row, including 360 degree panoramas. It is being built in small versions.
 
-Status: version 0.1. The widget reads the cells of the selected row, lists the images it finds and reports the values it ignored. The display of the images comes in the next versions.
+Status: version 0.2. The widget shows the images of the selected row one at a time, with the name, a counter, previous and next buttons and the arrow keys, and reports the values it ignored. Nextcloud share links are converted automatically. A 360 degree image is shown flat for now: the panoramic view comes in a later version. Attachments need the access level "Full document access"; links work with "Read table".
 
 ### Columns
 
@@ -41,6 +41,7 @@ If your Grist server is not `grist.numerique.gouv.fr`, edit two places in `index
 
 - `index.html`, `widget.js`, `widget.css`: the widget.
 - `images.js`: turns the cell values into a list of images (no page access, tested with Node).
+- `drives.js`: turns a link of a drive into the address of the picture (Nextcloud for now, tested with Node).
 - `shared/i18n.js`: French and English texts, picked from the browser language.
 - `tests/`: the tests.
 
@@ -50,7 +51,7 @@ Licence: MIT.
 
 Widget personnalisé pour [Grist](https://www.getgrist.com) qui affiche les images de la ligne sélectionnée, y compris les panoramas à 360°. Il est construit par petites versions.
 
-État : version 0.1. Le widget lit les cellules de la ligne sélectionnée, liste les images trouvées et signale les valeurs ignorées. L'affichage des images arrive dans les prochaines versions.
+État : version 0.2. Le widget affiche une à une les images de la ligne sélectionnée, avec le nom, un compteur, les boutons précédent et suivant et les flèches du clavier, et signale les valeurs ignorées. Les liens de partage Nextcloud sont convertis automatiquement. Une image 360° est affichée à plat pour l'instant : la vue panoramique arrive dans une prochaine version. Les pièces jointes demandent le niveau d'accès « Accès complet au document » ; les liens fonctionnent avec « Lire la table ».
 
 ### Colonnes
 

@@ -1,6 +1,6 @@
 {
   "name": "image_plus",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Grist custom widget: image viewer with 360 degree panoramas",
   "private": true,
   "license": "MIT",
