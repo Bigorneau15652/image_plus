@@ -1,7 +1,7 @@
-// Image Plus widget (version 0.3): shows the images of the selected Grist row one at a time,
+// Image Plus widget (version 0.4): shows the images of the selected Grist row one at a time,
 // with the name, the counter, previous and next buttons and the arrow keys. Images come from
-// attachments or from https links (Nextcloud share links are converted). An attachment marked
-// 360 opens in the Pannellum panoramic viewer (picture reduced if the graphics card is too small);
+// attachments or from https links (Nextcloud, Google Drive, OneDrive and kDrive share links are
+// converted). An attachment marked 360 opens in the Pannellum panoramic viewer (picture reduced if the graphics card is too small);
 // a 360 link is shown flat for now, with a note.
 (function () {
   const { t, applyTranslations } = window.imagePlusI18n;
@@ -216,8 +216,11 @@
     el.note360.hidden = !notes.length;
   }
 
-  // Shows the picture as a flat image.
+  // Shows the picture as a flat image. A link of a drive may have several candidate addresses:
+  // when one fails to load, the next one is tried before the error is shown.
   function showFlat(image, address, version) {
+    const candidates = image.kind === `link` ? candidatesOf(image) : [address];
+    let attempt = 0;
     el.photo.onload = () => {
       if (version !== state.showVersion) return;
       el.status.textContent = ``;
@@ -226,11 +229,22 @@
     };
     el.photo.onerror = () => {
       if (version !== state.showVersion) return;
+      attempt += 1;
+      if (attempt < candidates.length) {
+        el.photo.src = candidates[attempt];
+        return;
+      }
       el.status.textContent = ``;
       setError(t(`loadError`), image.kind === `link` ? image.href : null);
     };
     el.photo.alt = image.label;
-    el.photo.src = address;
+    el.photo.src = candidates[0];
+  }
+
+  // All the addresses to try for a link, the most likely first.
+  function candidatesOf(image) {
+    const converted = toImageUrl(image.href);
+    return [converted.url, ...converted.alternatives];
   }
 
   // Shows the image at the given position: name, counter, then the picture itself.

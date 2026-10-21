@@ -6,7 +6,7 @@ English first, version française plus bas.
 
 A custom widget for [Grist](https://www.getgrist.com) that shows the images of the selected row, including 360 degree panoramas. It is being built in small versions.
 
-Status: version 0.3. The widget shows the images of the selected row one at a time, with the name, a counter, previous and next buttons and the arrow keys, and reports the values it ignored. Nextcloud share links are converted automatically. An attachment marked `[360]` opens in a panoramic view (drag to look around, mouse wheel or the + and - buttons to zoom, left and right arrow keys to change image); a picture larger than the graphics card accepts is reduced automatically and the widget says so. A 360 degree link is still shown flat, with a note: the panoramic view of links comes in a later version. Attachments need the access level "Full document access"; links work with "Read table".
+Status: version 0.4. The widget shows the images of the selected row one at a time, with the name, a counter, previous and next buttons and the arrow keys, and reports the values it ignored. Share links of Nextcloud, Google Drive, OneDrive and kDrive are converted automatically (the public share must show a picture; the commercial drives do not document these addresses, so they may stop working one day). An attachment marked `[360]` opens in a panoramic view (drag to look around, mouse wheel or the + and - buttons to zoom, left and right arrow keys to change image); a picture larger than the graphics card accepts is reduced automatically and the widget says so. A 360 degree link is still shown flat, with a note: the panoramic view of links comes in a later version. Attachments need the access level "Full document access"; links work with "Read table".
 
 ### Columns
 
@@ -36,13 +36,13 @@ If your Grist server is not `grist.numerique.gouv.fr`, edit three places in `ind
 
 ### Development
 
-`npm test` runs the tests of the cell analysis (`images.js`), of the links of drives (`drives.js`) and of the size decisions of the 360 degree view (`panorama.js`) with Node. The pages reference their scripts with `?v=0.3.0`: change that number in `index.html` with every release so that browsers fetch the new files at once.
+`npm test` runs the tests of the cell analysis (`images.js`), of the links of drives (`drives.js`) and of the size decisions of the 360 degree view (`panorama.js`) with Node. The pages reference their scripts with `?v=0.4.0`: change that number in `index.html` with every release so that browsers fetch the new files at once.
 
 ### Files
 
 - `index.html`, `widget.js`, `widget.css`: the widget.
 - `images.js`: turns the cell values into a list of images (no page access, tested with Node).
-- `drives.js`: turns a link of a drive into the address of the picture (Nextcloud for now, tested with Node).
+- `drives.js`: turns a link of a drive into the addresses of the picture (Nextcloud, Google Drive, OneDrive, kDrive, tested with Node).
 - `panorama.js`: decides whether a picture is reduced for the graphics card (no page access, tested with Node).
 - `vendor/pannellum/`: the Pannellum viewer, with its licence.
 - `shared/i18n.js`: French and English texts, picked from the browser language.
@@ -54,7 +54,7 @@ Licence: MIT.
 
 Widget personnalisé pour [Grist](https://www.getgrist.com) qui affiche les images de la ligne sélectionnée, y compris les panoramas à 360°. Il est construit par petites versions.
 
-État : version 0.3. Le widget affiche une à une les images de la ligne sélectionnée, avec le nom, un compteur, les boutons précédent et suivant et les flèches du clavier, et signale les valeurs ignorées. Les liens de partage Nextcloud sont convertis automatiquement. Une pièce jointe marquée `[360]` s'ouvre en vue panoramique (glisser pour regarder autour, molette ou boutons + et - pour zoomer, flèches gauche et droite pour changer d'image) ; une image plus grande que ce que la carte graphique accepte est réduite automatiquement et le widget l'indique. Un lien 360° est encore affiché à plat, avec une note : la vue panoramique des liens arrive dans une prochaine version. Les pièces jointes demandent le niveau d'accès « Accès complet au document » ; les liens fonctionnent avec « Lire la table ».
+État : version 0.4. Le widget affiche une à une les images de la ligne sélectionnée, avec le nom, un compteur, les boutons précédent et suivant et les flèches du clavier, et signale les valeurs ignorées. Les liens de partage Nextcloud, Google Drive, OneDrive et kDrive sont convertis automatiquement (le partage public doit désigner une image ; les drives commerciaux ne documentent pas ces adresses, elles peuvent donc cesser de fonctionner un jour). Une pièce jointe marquée `[360]` s'ouvre en vue panoramique (glisser pour regarder autour, molette ou boutons + et - pour zoomer, flèches gauche et droite pour changer d'image) ; une image plus grande que ce que la carte graphique accepte est réduite automatiquement et le widget l'indique. Un lien 360° est encore affiché à plat, avec une note : la vue panoramique des liens arrive dans une prochaine version. Les pièces jointes demandent le niveau d'accès « Accès complet au document » ; les liens fonctionnent avec « Lire la table ».
 
 ### Colonnes
 
